@@ -5,7 +5,7 @@ Oracle database creates under the hood a special table to store and index the co
 
 The next project is a simple work in progress to use the soda library with spring boot. 
 
-For no, it does implement the database connection using some configuration beans but, its possible (and better) to implement this using a custom Spring Repository.
+For now, it does implement the database connection using some configuration beans but, its possible (and better) to implement this using a custom Spring Repository.
 
 ## Requirements
 - JDK 11
@@ -49,7 +49,7 @@ curl -H "Content-type: application/json" -X PUT http://localhost:8080/books -d '
 ### Find all
 curl -H "Content-type: application/json" http://localhost:8080/books
 
-## Update
+### Update
 curl -H "Content-type: application/json" -X POST http://localhost:8080/books -d '{"id" : "123456", "name":"super3"}'
 
 
