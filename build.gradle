@@ -1,0 +1,26 @@
+plugins {
+	id 'org.springframework.boot' version '2.5.0'
+	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+	id 'java'
+}
+
+group = 'com.carlgira'
+version = '1.0.0'
+sourceCompatibility = '11'
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation group: 'com.oracle.database.soda', name: 'orajsoda', version: '1.1.7.1'
+	implementation group: 'com.oracle.database.jdbc', name: 'ojdbc11', version: '21.1.0.0'
+	implementation group: 'javax.json', name: 'javax.json-api', version: '1.1.4'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+test {
+	useJUnitPlatform()
+}
