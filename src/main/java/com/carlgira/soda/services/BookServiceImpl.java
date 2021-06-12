@@ -13,26 +13,31 @@ import java.util.Optional;
 @Component
 public class BookServiceImpl implements BookService {
 
+    OracleOperations<Book> operations;
+
     @Autowired
-    OracleOperations operations;
+    public void configure(OracleDatabase database, OracleOperations<Book> operations) throws OracleException {
+        this.operations = operations;
+        this.operations.init(database, Book.class, "books");
+    }
 
     public void save(Book book) throws OracleException, IllegalAccessException {
-        this.operations.save(book);
+        this.operations.insert(book);
     }
 
     public List<Book> findAll(){
-        return operations.findAll(Book.class);
+        return operations.findAll();
     }
 
     public Optional<Book> findOne(String id) throws OracleException, JsonProcessingException {
-        return this.operations.findOne(id, Book.class);
+        return this.operations.findOne(id);
     }
 
     public void update(Book book) {
-        this.operations.update(book, Book.class);
+        this.operations.update(book);
     }
 
     public void delete(String id) throws OracleException {
-        this.operations.delete(new Book(id), Book.class);
+        this.operations.delete(new Book(id));
     }
 }

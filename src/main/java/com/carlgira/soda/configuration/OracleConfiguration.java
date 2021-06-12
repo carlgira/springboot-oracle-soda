@@ -1,17 +1,17 @@
 package com.carlgira.soda.configuration;
 
-import oracle.soda.OracleCollection;
-import oracle.soda.OracleDatabase;
-import oracle.soda.OracleDatabaseAdmin;
-import oracle.soda.OracleException;
+import oracle.jdbc.OracleConnection;
+import oracle.soda.*;
 import oracle.soda.rdbms.OracleRDBMSClient;
 import oracle.soda.rdbms.OracleRDBMSMetadataBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import oracle.jdbc.pool.OracleDataSource;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.SQLException;
 
 @Configuration
@@ -21,9 +21,6 @@ public class OracleConfiguration {
     DataSource dataSource;
 
 
-    @Value("${consumer.label}")
-    String collectionName;
-
     @Bean
     OracleRDBMSClient oracleRDBMSClient() {
         OracleRDBMSClient oracleRDBMSClient = new OracleRDBMSClient();
@@ -32,8 +29,8 @@ public class OracleConfiguration {
 
     @Bean
     OracleRDBMSMetadataBuilder oracleRDBMSMetadataBuilder() throws OracleException {
+
         OracleRDBMSMetadataBuilder oracleRDBMSMetadataBuilder = oracleRDBMSClient().createMetadataBuilder();
-        //     oracleRDBMSMetadataBuilder.keyColumnAssignmentMethod("CLIENT").contentColumnType("CLOB");
         return oracleRDBMSMetadataBuilder;
 
     }
@@ -50,11 +47,17 @@ public class OracleConfiguration {
         return oracleDatabaseAdmin;
     }
 
+    /*
     @Bean
     OracleCollection oracleCollection() throws OracleException, SQLException {
-        OracleCollection oracleCollection = oracleDatabase().admin().createCollection(collectionName, oracleRDBMSMetadataBuilder().build());
-        return oracleCollection;
+
+        OracleDocument oracleDocument = oracleRDBMSMetadataBuilder().build();
+        System.out.println("---------------------- " + oracleDocument.getContentAsString());
+        //OracleCollection oracleCollection = oracleDatabase().admin().createCollection(collectionName, oracleDocument);
+
+        return oracleDatabase().openCollection("books");
     }
+    */
 
 }
 

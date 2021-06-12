@@ -16,7 +16,6 @@ For no, it does implement the database connection using some configuration beans
 1. Create a user in the database (it's a normal user but its need the special GRANT of **SODA_APP**) 
 ```roomsql
 CREATE USER sodauser IDENTIFIED BY sodauser;
-GRANT connect, resource TO sodauser IDENTIFIED BY sodauser;
 
 GRANT create session TO sodauser;
 GRANT create table TO sodauser;
@@ -29,7 +28,61 @@ grant SODA_APP to sodauser;
 GRANT UNLIMITED TABLESPACE TO sodauser;
 ```
 
-2. Change the database connection properties of the file "application.properties"
+2. Enter as sodauser and create the collection.
+
+```roomsql
+DECLARE
+  l_collection  SODA_COLLECTION_T;
+  l_metadata    VARCHAR2(32767);
+BEGIN
+  l_metadata := '{
+	"keyColumn": {
+		"name": "ID",
+		"sqlType": "VARCHAR2",
+		"maxLength": 255,
+		"assignmentMethod": "UUID"
+	},
+	"contentColumn": {
+		"name": "JSON_DOCUMENT",
+		"sqlType": "BLOB",
+	},
+	"versionColumn": {
+		"name": "VERSION",
+		"type": "String",
+		"method": "SHA256"
+	},
+	"lastModifiedColumn": {
+		"name": "LAST_MODIFIED"
+	},
+	"creationTimeColumn": {
+		"name": "CREATED_ON"
+	},
+	"readOnly": false
+    }';
+    
+  l_collection := DBMS_SODA.create_collection('books', l_metadata);
+
+  IF l_collection IS NOT NULL THEN
+    DBMS_OUTPUT.put_line('Collection ID : ' || l_collection.get_name());
+  ELSE
+    DBMS_OUTPUT.put_line('Collection does not exist.');  
+  END IF;
+END;
+/
+
+-- DECLARE
+--  l_status  NUMBER := 0;
+-- BEGIN
+--  l_status := DBMS_SODA.drop_collection('books');
+--  DBMS_OUTPUT.put_line('status    : ' || l_status);
+-- END;
+-- /
+
+
+```
+
+
+3. Change the database connection properties of the file "application.properties"
 
 ## Build
 ```commandline
@@ -38,7 +91,7 @@ GRANT UNLIMITED TABLESPACE TO sodauser;
 
 ## Run
 ```commandline
-java -jar build/libs/springboot-oracle-soda-1.0.0.jar
+java -Doracle.net.tns_admin=wallet-atp -jar build/libs/springboot-oracle-soda-1.0.0.jar
 ```
 
 ## Test

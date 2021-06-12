@@ -2,17 +2,22 @@ package com.carlgira.soda.model;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import oracle.soda.OracleDocument;
+import oracle.soda.OracleDocumentFactory;
+import oracle.soda.rdbms.impl.OracleDocumentFragmentImpl;
+import oracle.soda.rdbms.impl.OracleDocumentImpl;
 import oracle.sql.json.OracleJsonFactory;
 import oracle.sql.json.OracleJsonObject;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import java.io.Serializable;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-@Entity
-public class Book implements Serializable {
+public class Book  {
+
     @Id
     private String id;
 

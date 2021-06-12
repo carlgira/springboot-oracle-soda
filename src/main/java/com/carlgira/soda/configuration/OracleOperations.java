@@ -10,14 +10,20 @@ import java.util.Optional;
 
 public interface OracleOperations<T> {
 
-    List<T> findAll(Class<T> entity);
+    void init(OracleDatabase database, Class<T> entity, String collectionName) throws OracleException ;
 
-    void save(T t);
+    List<T> findAll();
 
-    Optional<T> findOne(Object id, Class<T> entity);
+    void insert(T t);
 
-    void update(T t, Class<T> entity);
+    void insert(List<T> t);
 
-    void delete(T t, Class<T> entity);
+    Optional<T> findOne(Object id);
+
+    void update(T t);
+
+    void delete(T t);
+
+    void deleteAll();
 
 }

@@ -4,24 +4,45 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import oracle.soda.*;
+import oracle.soda.rdbms.impl.OracleDocumentImpl;
 import oracle.sql.json.OracleJsonFactory;
 import oracle.sql.json.OracleJsonObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 
+import javax.json.Json;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
 import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
 import java.util.*;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
-@Configuration
+@Component
 public class OracleOperationsImpl<T> implements OracleOperations<T> {
 
-    @Autowired
-    OracleCollection collection;
+    private OracleDatabase database;
+    private OracleCollection collection;
+    private final ObjectMapper oMapper;
+    private final OracleJsonFactory factory;
+    private String collectionName;
+    private Class<T> entity;
 
-    @Autowired
-    OracleDatabase database;
+    public OracleOperationsImpl() throws OracleException {
+        this.oMapper = new ObjectMapper();
+        this.factory = new OracleJsonFactory();
+    }
 
-    public List<T> findAll(Class<T> entity){
+    public void init(OracleDatabase database, Class<T> entity, String collectionName) throws OracleException {
+        this.database = database;
+        this.entity = entity;
+        this.collectionName = collectionName;
+        this.collection = this.database.openCollection(this.collectionName);
+    }
+
+    public List<T> findAll(){
 
         List<T> list = new ArrayList<>();
         try{
@@ -44,23 +65,26 @@ public class OracleOperationsImpl<T> implements OracleOperations<T> {
     }
 
     @Override
-    public void save(T t) {
-        OracleJsonFactory factory = new OracleJsonFactory();
-        OracleJsonObject obj = factory.createObject();
-        ObjectMapper oMapper = new ObjectMapper();
-        Map<String, Object> op = oMapper.convertValue(t, Map.class);
-        op.forEach((k, v) -> obj.put(k ,  String.valueOf(v)));
-
+    public void insert(T t) {
         try {
-            collection.insertAndGet(database.createDocumentFrom(obj)).getKey();
+            collection.insertAndGet(this.createDocument(t)).getKey();
         } catch (OracleException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void insert(List<T> t) {
+        try {
+            this.collection.insert(t.stream().map(this::createDocument).collect(Collectors.toList()).iterator());
+        } catch (OracleBatchException e) {
             e.printStackTrace();
         }
     }
 
     // FIX
     @Override
-    public Optional<T> findOne(Object id, Class<T> entity) {
+    public Optional<T> findOne(Object id) {
         Optional<T> result = Optional.empty();
         String idName = this.getIdName(entity);
 
@@ -70,8 +94,8 @@ public class OracleOperationsImpl<T> implements OracleOperations<T> {
 
         try {
             OracleDocument doc = collection.find().filter(oMapper.writeValueAsString(map)).getOne();
-            //ObjectMapper mapper = new ObjectMapper();
-            //book = Optional.of(mapper.readValue(doc.getContentAsString(), Book.class));
+            // ObjectMapper mapper = new ObjectMapper();
+            // book = Optional.of(mapper.readValue(doc.getContentAsString(), Book.class));
             result = Optional.of(doc.getContentAs(entity));
             return result;
 
@@ -85,14 +109,13 @@ public class OracleOperationsImpl<T> implements OracleOperations<T> {
     }
 
     @Override
-    public void update(T t, Class<T> entity){
+    public void update(T t){
 
         try {
             Map<String, String> idMap = this.getIdValue(t, entity);
             OracleDocument doc = collection.find().filter(new ObjectMapper().writeValueAsString(idMap)).getOne();
 
             if(doc.isJSON()){
-                OracleJsonFactory factory = new OracleJsonFactory();
                 OracleJsonObject obj = doc.getContentAs(OracleJsonObject.class);
 
                 ObjectMapper oMapper = new ObjectMapper();
@@ -113,7 +136,7 @@ public class OracleOperationsImpl<T> implements OracleOperations<T> {
 
     // FIX
     @Override
-    public void delete(T t, Class<T> entity) {
+    public void delete(T t) {
         try{
             Map<String, String> idMap = this.getIdValue(t, entity);
             this.collection.find().filter(new ObjectMapper().writeValueAsString(idMap)).remove();
@@ -127,9 +150,20 @@ public class OracleOperationsImpl<T> implements OracleOperations<T> {
 
     }
 
+    @Override
+    public void deleteAll()  {
+        try{
+            this.collection.find().remove();
+        } catch (OracleException e) {
+            e.printStackTrace();
+        }
+
+
+    }
+
     private String getIdName(Class<T> entity){
         String idName = null;
-        for(Field field : entity.getFields()){
+        for(Field field : entity.getDeclaredFields()){
             if (field.getAnnotation(javax.persistence.Id.class) != null){
                 idName = field.getName();
                 break;
@@ -148,6 +182,20 @@ public class OracleOperationsImpl<T> implements OracleOperations<T> {
             }
         }
         return id;
+    }
+
+    private OracleDocument createDocument(T t){
+        OracleJsonObject obj = factory.createObject();
+        Map<String, Object> op = oMapper.convertValue(t, Map.class);
+        op.forEach((k, v) -> obj.put(k ,  String.valueOf(v)));
+
+        OracleDocument document = null;
+        try {
+            document = database.createDocumentFrom(obj);
+        } catch (OracleException e) {
+            e.printStackTrace();
+        }
+        return document;
     }
 
 
