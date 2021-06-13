@@ -1,6 +1,7 @@
 package com.carlgira.soda.controllers;
 
 import com.carlgira.soda.model.Book;
+import com.carlgira.soda.model.BookId;
 import com.carlgira.soda.services.BookService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import oracle.soda.OracleException;
@@ -28,7 +29,7 @@ public class BookController {
     }
 
     @GetMapping("/{id}")
-    public Optional<Book> findOne(@PathVariable(value="id") String id) throws OracleException, JsonProcessingException {
+    public Optional<Book> findOne(@PathVariable(value="id") BookId id) throws OracleException, JsonProcessingException {
         return this.bookService.findOne(id);
     }
 
@@ -38,7 +39,7 @@ public class BookController {
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable(value="id") String id) throws OracleException {
+    public void delete(@PathVariable(value="id") BookId id) throws OracleException {
         this.bookService.delete(id);
     }
 }

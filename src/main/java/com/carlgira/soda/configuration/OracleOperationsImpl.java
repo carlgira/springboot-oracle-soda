@@ -4,20 +4,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import oracle.soda.*;
-import oracle.soda.rdbms.impl.OracleDocumentImpl;
 import oracle.sql.json.OracleJsonFactory;
-import oracle.sql.json.OracleJsonObject;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
-
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
-import java.lang.reflect.ParameterizedType;
 import java.util.*;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 @Component
@@ -30,6 +22,8 @@ public class OracleOperationsImpl<T> implements OracleOperations<T> {
     private String collectionName;
     private Class<T> entity;
 
+    private String idField;
+
     public OracleOperationsImpl() throws OracleException {
         this.oMapper = new ObjectMapper();
         this.factory = new OracleJsonFactory();
@@ -39,6 +33,7 @@ public class OracleOperationsImpl<T> implements OracleOperations<T> {
         this.database = database;
         this.entity = entity;
         this.collectionName = collectionName;
+        this.idField = this.getIdName(this.entity);
         this.collection = this.database.openCollection(this.collectionName);
     }
 
@@ -49,15 +44,14 @@ public class OracleOperationsImpl<T> implements OracleOperations<T> {
             OracleCursor cursor = collection.find().getCursor();
             while (cursor.hasNext()) {
                 OracleDocument doc = cursor.next();
-                ObjectMapper mapper = new ObjectMapper();
-                T object = mapper.readValue(doc.getContentAsString(), entity);
+                T object = oMapper.readValue(doc.getContentAsString(), entity);
                 list.add(object);
             }
-        } catch (OracleException e) {
-            e.printStackTrace();
         } catch (JsonMappingException e) {
             e.printStackTrace();
         } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        } catch (OracleException e) {
             e.printStackTrace();
         }
 
@@ -82,26 +76,24 @@ public class OracleOperationsImpl<T> implements OracleOperations<T> {
         }
     }
 
-    // FIX
     @Override
     public Optional<T> findOne(Object id) {
         Optional<T> result = Optional.empty();
-        String idName = this.getIdName(entity);
 
         Map<Object, Object> map = new HashMap<>();
-        map.put(idName, id);
-        ObjectMapper oMapper = new ObjectMapper();
+        map.put(this.idField, id);
 
         try {
             OracleDocument doc = collection.find().filter(oMapper.writeValueAsString(map)).getOne();
-            // ObjectMapper mapper = new ObjectMapper();
-            // book = Optional.of(mapper.readValue(doc.getContentAsString(), Book.class));
-            result = Optional.of(doc.getContentAs(entity));
-            return result;
-
+            if(doc != null){
+                result = Optional.of(oMapper.readValue(doc.getContentAs(InputStream.class), entity));
+                return result;
+            }
         } catch (OracleException e) {
             e.printStackTrace();
         } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
@@ -110,19 +102,11 @@ public class OracleOperationsImpl<T> implements OracleOperations<T> {
 
     @Override
     public void update(T t){
-
         try {
-            Map<String, String> idMap = this.getIdValue(t, entity);
-            OracleDocument doc = collection.find().filter(new ObjectMapper().writeValueAsString(idMap)).getOne();
-
-            if(doc.isJSON()){
-                OracleJsonObject obj = doc.getContentAs(OracleJsonObject.class);
-
-                ObjectMapper oMapper = new ObjectMapper();
-                Map<String, Object> op = oMapper.convertValue(t, Map.class);
-                op.forEach((k, v) -> obj.put(k ,  String.valueOf(v)));
-
-                collection.find().key(doc.getKey()).replaceOne(database.createDocumentFrom(obj));
+            Map<String, String> idMap = this.getIdValue(t);
+            OracleDocument doc = collection.find().filter(oMapper.writeValueAsString(idMap)).getOne();
+            if( doc != null){
+                collection.find().key(doc.getKey()).mergeOne(this.createDocument(t));
             }
         } catch (OracleException e) {
             e.printStackTrace();
@@ -131,23 +115,20 @@ public class OracleOperationsImpl<T> implements OracleOperations<T> {
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
-
     }
 
-    // FIX
     @Override
-    public void delete(T t) {
+    public void delete(Object id) {
         try{
-            Map<String, String> idMap = this.getIdValue(t, entity);
-            this.collection.find().filter(new ObjectMapper().writeValueAsString(idMap)).remove();
+            Map<Object, Object> idMap = new HashMap<>();
+            idMap.put(this.idField, id);
+            System.out.println(oMapper.writeValueAsString(idMap));
+            this.collection.find().filter(oMapper.writeValueAsString(idMap)).remove();
         } catch (OracleException e) {
             e.printStackTrace();
         } catch (JsonProcessingException e) {
             e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
         }
-
     }
 
     @Override
@@ -157,8 +138,6 @@ public class OracleOperationsImpl<T> implements OracleOperations<T> {
         } catch (OracleException e) {
             e.printStackTrace();
         }
-
-
     }
 
     private String getIdName(Class<T> entity){
@@ -173,30 +152,26 @@ public class OracleOperationsImpl<T> implements OracleOperations<T> {
         return idName;
     }
 
-    private Map<String, String> getIdValue(T t, Class<T> entity) throws IllegalAccessException {
+    private Map<String, String> getIdValue(T t) throws IllegalAccessException, JsonProcessingException {
         Map<String, String> id = new HashMap<>();
         for(Field field : entity.getFields()){
+            field.setAccessible(true);
             if (field.getAnnotation(javax.persistence.Id.class) != null){
-                id.put(field.getName(), String.valueOf(field.get(t)));
+                id.put(field.getName(), oMapper.writeValueAsString(field.get(t)));
                 break;
             }
         }
         return id;
     }
 
-    private OracleDocument createDocument(T t){
-        OracleJsonObject obj = factory.createObject();
-        Map<String, Object> op = oMapper.convertValue(t, Map.class);
-        op.forEach((k, v) -> obj.put(k ,  String.valueOf(v)));
-
+    private OracleDocument createDocument(T t) {
         OracleDocument document = null;
         try {
-            document = database.createDocumentFrom(obj);
-        } catch (OracleException e) {
+            String value = oMapper.writeValueAsString(t);
+            document = database.createDocumentFromString(value);
+        } catch (OracleException | JsonProcessingException e) {
             e.printStackTrace();
         }
         return document;
     }
-
-
 }

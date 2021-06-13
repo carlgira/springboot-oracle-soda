@@ -2,6 +2,7 @@ package com.carlgira.soda.services;
 
 import com.carlgira.soda.configuration.OracleOperations;
 import com.carlgira.soda.model.Book;
+import com.carlgira.soda.model.BookId;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import oracle.soda.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,15 +30,15 @@ public class BookServiceImpl implements BookService {
         return operations.findAll();
     }
 
-    public Optional<Book> findOne(String id) throws OracleException, JsonProcessingException {
-        return this.operations.findOne(id);
+    public Optional<Book> findOne(BookId bookId) throws OracleException, JsonProcessingException {
+        return this.operations.findOne(bookId);
     }
 
     public void update(Book book) {
         this.operations.update(book);
     }
 
-    public void delete(String id) throws OracleException {
-        this.operations.delete(new Book(id));
+    public void delete(BookId bookId) throws OracleException {
+        this.operations.delete(bookId);
     }
 }

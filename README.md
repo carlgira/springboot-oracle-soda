@@ -110,4 +110,3 @@ curl -H "Content-type: application/json" -X POST http://localhost:8080/books -d 
 - Some javadocs
 - Add more operations on the class OracleOperations using java generics.
 - Create custom spring repository
-- Unit tests (maybe is possible using "Oracle NoSQL Cloud Simulator")

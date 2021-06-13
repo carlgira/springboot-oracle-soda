@@ -22,7 +22,7 @@ public interface OracleOperations<T> {
 
     void update(T t);
 
-    void delete(T t);
+    void delete(Object id);
 
     void deleteAll();
 
