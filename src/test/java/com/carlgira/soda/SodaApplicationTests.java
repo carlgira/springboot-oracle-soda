@@ -1,11 +1,14 @@
 package com.carlgira.soda;
 
 import com.carlgira.soda.configuration.OracleOperations;
+import com.carlgira.soda.configuration.OracleOperationsImpl;
+import com.carlgira.soda.configuration.OracleRepository;
+import com.carlgira.soda.configuration.OracleRepositoryImpl;
 import com.carlgira.soda.model.Book;
 import com.carlgira.soda.model.BookId;
 import com.carlgira.soda.model.Page;
+import com.carlgira.soda.respository.BookRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import oracle.soda.OracleDatabase;
 import oracle.soda.OracleException;
 import org.junit.jupiter.api.Test;
@@ -23,22 +26,23 @@ import java.util.Optional;
 @RunWith(SpringJUnit4ClassRunner.class)
 class SodaApplicationTests {
 
+
     static {
         System.setProperty("oracle.net.tns_admin", "wallet-atp");
     }
 
-    private OracleOperations<Book> operations;
+    private OracleOperations<Book, BookId> operations;
 
     @Autowired
-    public void configure(OracleDatabase database, OracleOperations<Book> operations) throws OracleException {
+    public void configure(OracleDatabase database, OracleOperations<Book, BookId> operations) throws OracleException {
         this.operations = operations;
-        this.operations.init(database, Book.class, "books");
+        this.operations.init(database, Book.class);
     }
 
     @Test
     public void test1() throws OracleException, JsonProcessingException {
         // Delete All
-        this.operations.deleteAll();
+        this.operations.clear();
         List<Book> books = operations.findAll();
         assert books.size() == 0;
 
@@ -52,7 +56,7 @@ class SodaApplicationTests {
 
         this.operations.insert(book1);
 
-        Optional<Book> book1R = this.operations.findOne(new BookId(1));
+        Optional<Book> book1R = this.operations.findById(new BookId(1));
 
         assert book1R.isPresent() && book1R.get().getId().equals(new BookId(1)) && book1R.get().getName().equals("book1");
 
@@ -88,18 +92,19 @@ class SodaApplicationTests {
         book4.setContent(List.of(new Page(5, false), new Page(6, false)));
         book4.setPublication(new Date());
 
-        this.operations.update(book4);
+        this.operations.findAndReplace(book4);
 
-        Optional<Book> book4R = this.operations.findOne(book4.getId());
+        Optional<Book> book4R = this.operations.findById(book4.getId());
 
         assert book4R.isPresent() && book4R.get().getName().equals("book31");
 
         // Delete
-        this.operations.delete(book4.getId());
+        this.operations.findAndRemove(book4.getId());
 
-        Optional<Book> book5R = this.operations.findOne(book4.getId());
+        Optional<Book> book5R = this.operations.findById(book4.getId());
 
         assert book5R.isEmpty();
     }
+
 
 }

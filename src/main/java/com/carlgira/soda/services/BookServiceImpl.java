@@ -14,12 +14,13 @@ import java.util.Optional;
 @Component
 public class BookServiceImpl implements BookService {
 
-    OracleOperations<Book> operations;
+
+    private OracleOperations<Book, BookId> operations;
 
     @Autowired
-    public void configure(OracleDatabase database, OracleOperations<Book> operations) throws OracleException {
+    public void configure(OracleDatabase database, OracleOperations<Book, BookId> operations) throws OracleException {
         this.operations = operations;
-        this.operations.init(database, Book.class, "books");
+        this.operations.init(database, Book.class);
     }
 
     public void save(Book book) throws OracleException, IllegalAccessException {
@@ -31,14 +32,14 @@ public class BookServiceImpl implements BookService {
     }
 
     public Optional<Book> findOne(BookId bookId) throws OracleException, JsonProcessingException {
-        return this.operations.findOne(bookId);
+        return this.operations.findById(bookId);
     }
 
     public void update(Book book) {
-        this.operations.update(book);
+        this.operations.findAndReplace(book);
     }
 
     public void delete(BookId bookId) throws OracleException {
-        this.operations.delete(bookId);
+        this.operations.findAndRemove(bookId);
     }
 }
