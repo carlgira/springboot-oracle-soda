@@ -79,8 +79,6 @@ public class OracleOperationsImpl<T, ID> implements OracleOperations<T, ID> {
     }
 
     private T doc2Type(OracleDocument doc){
-
-
         if(doc == null){
             return null;
         }
