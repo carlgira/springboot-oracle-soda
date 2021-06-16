@@ -3,9 +3,9 @@ This example shows how to use soda library using Oracle relational database as n
 
 Oracle database creates under the hood a special table to store and index the collections of objects.
 
-The next project is a simple work in progress to use the soda library with spring boot. 
+This project is a simple work in progress to use the soda library with spring boot. 
 
-For now, it does implement the database connection using some configuration beans but, its possible (and better) to implement this using a custom Spring Repository.
+It does implement the database connection using some configuration beans but, its possible (and better) to implement this using a custom Spring Repository.
 
 ## Requirements
 - JDK 11
@@ -94,6 +94,8 @@ END;
 java -Doracle.net.tns_admin=wallet-atp -jar build/libs/springboot-oracle-soda-1.0.0.jar
 ```
 
+** The oracle.net.tns_admin arg is to use a wallet to connect to an ATP.
+
 ## Test
 
 ### Add
@@ -105,8 +107,3 @@ curl -H "Content-type: application/json" http://localhost:8080/books
 ### Update
 curl -H "Content-type: application/json" -X POST http://localhost:8080/books -d '{"id" : "123456", "name":"super3"}'
 
-
-## TODO
-- Some javadocs
-- Add more operations on the class OracleOperations using java generics.
-- Create custom spring repository

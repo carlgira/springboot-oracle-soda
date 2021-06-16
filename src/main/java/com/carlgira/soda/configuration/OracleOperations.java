@@ -35,36 +35,4 @@ public interface OracleOperations<T, ID> {
     void dropCollection() throws OracleException;
 
     void dropCollection(String collectionName) throws OracleException;
-
-    /*
-    boolean exists(Query query, Class<?> entityClass);
-    <T> List<T> find(Query query, Class<T> entityClass);
-    default <T> List<T> findDistinct(String field, Class<?> entityClass, Class<T> resultClass)
-
-
-    <T> T findAndRemove(Query query, Class<T> entityClass);
-        default <T> T findAndReplace(Query query, T replacement, String collectionName) {
-        <T> T findAndModify(Query query, UpdateDefinition update, FindAndModifyOptions options, Class<T> entityClass,
-        String collectionName);
-        <T> T findAndRemove(Query query, Class<T> entityClass);
-        long count(Query query, Class<?> entityClass);
-
-        <T> Collection<T> insert(Collection<? extends T> batchToSave, Class<?> entityClass);
-
-        <T> Collection<T> insertAll(Collection<? extends T> objectsToSave);
-
-        <T> T save(T objectToSave);
-        UpdateResult upsert(Query query, UpdateDefinition update, Class<?> entityClass);
-        UpdateResult upsert(Query query, UpdateDefinition update, Class<?> entityClass, String collectionName);
-        UpdateResult upsert(Query query, UpdateDefinition update, Class<?> entityClass, String collectionName);
-
-        UpdateResult updateMulti(Query query, UpdateDefinition update, Class<?> entityClass);
-
-        DeleteResult remove(Object object);
-        DeleteResult remove(Query query, Class<?> entityClass);
-
-        <T> List<T> findAllAndRemove(Query query, String collectionName);
-
-     */
-
 }
